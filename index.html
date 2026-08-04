@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>角色系统面板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    :root { --ink:#17211e; --muted:#71807a; --paper:#f6f3ea; --line:#c9d0c6; --green:#185d4a; --green-dark:#0d3329; --gold:#b68530; --red:#b44636; --panel:#fffdf8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); font-family:"Noto Serif SC",serif; min-height:100vh; background-color:#e7ebe3; background-image:linear-gradient(rgba(24,93,74,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(24,93,74,.045) 1px,transparent 1px); background-size:28px 28px; }
+    button,input,textarea { font:inherit; color:inherit; }
+    button { cursor:pointer; }
+    .shell { max-width:1440px; margin:0 auto; padding:34px clamp(18px,4vw,62px) 56px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:28px; }
+    .brand { display:flex; align-items:center; gap:13px; }
+    .seal { width:44px;height:44px;display:grid;place-items:center;color:var(--green); }
+    .brand h1 { font-size:19px; margin:0; letter-spacing:2px; font-weight:700; }
+    .brand p { margin:2px 0 0; color:var(--muted); font:11px "Space Mono",monospace; letter-spacing:1.5px; }
+    .top-actions { display:flex; gap:8px; }
+    .icon-btn { height:38px; min-width:38px; border:1px solid var(--line); background:rgba(255,253,248,.65); display:grid;place-items:center; transition:.18s; }
+    .icon-btn:hover { background:var(--green); color:#fff; border-color:var(--green); }
+    .export-btn { min-width:auto; padding:0 12px; display:flex; gap:7px; font-size:12px; }
+    .panel-layout { display:flex; gap:28px; align-items:flex-start; }
+    .avatar-panel { width:224px; height:286px; min-width:164px; min-height:190px; max-width:50%; flex:0 0 auto; position:relative; overflow:visible; margin-top:50px; background:var(--paper); border:1px solid var(--line); padding:16px; display:flex; justify-content:center; box-shadow:6px 6px 0 rgba(24,93,74,.075); }
+    .attributes-panel { min-width:0; flex:1; }
+    .portrait-wrap { position:relative; overflow:hidden; background:#d1dbd1; width:100%; height:100%; min-height:0; }
+    .portrait { width:100%;height:100%;object-fit:cover; display:block; filter:saturate(.7) contrast(1.03); }
+    .portrait:not([src]), .portrait[src=""] { display:none; }
+    .portrait-wrap:after { content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(13,51,41,.55));pointer-events:none; }
+    .portrait-edit { position:absolute;z-index:1;right:12px;top:12px;border:0;background:#fffdf8e8;width:34px;height:34px;display:grid;place-items:center; }
+    .portrait-hint { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--green-dark);font-size:13px;text-align:center;z-index:1; }
+    .portrait-hint i { width:28px;height:28px; }.portrait-wrap.has-image .portrait-hint { display:none; }.portrait-wrap.dragging { outline:3px solid var(--gold);outline-offset:-7px;background:#dce8dc; }
+    .resize-handle { position:absolute; z-index:5; touch-action:none; }
+    .resize-handle[data-resize="n"],.resize-handle[data-resize="s"] { left:10px;right:10px;height:14px;cursor:ns-resize; }
+    .resize-handle[data-resize="n"] { top:-7px; }.resize-handle[data-resize="s"] { bottom:-7px; }
+    .resize-handle[data-resize="e"],.resize-handle[data-resize="w"] { top:14px;bottom:14px;width:9px;cursor:ew-resize; }
+    .resize-handle[data-resize="e"] { right:-5px; }.resize-handle[data-resize="w"] { left:-5px; }
+    .resize-handle[data-resize$="e"],.resize-handle[data-resize$="w"] { width:13px;height:13px; }
+    .resize-handle[data-resize="ne"] { right:-6px;top:-6px;cursor:nesw-resize; }.resize-handle[data-resize="nw"] { left:-6px;top:-6px;cursor:nwse-resize; }
+    .resize-handle[data-resize="se"] { right:-6px;bottom:-6px;cursor:nwse-resize; }.resize-handle[data-resize="sw"] { left:-6px;bottom:-6px;cursor:nesw-resize; }
+    .section-head { margin:0 0 16px; display:flex; justify-content:space-between;align-items:end; }
+    .section-head h2 { margin:0;font-size:17px;letter-spacing:2px; }
+    .section-head p { margin:3px 0 0;color:var(--muted);font:10px "Space Mono",monospace;letter-spacing:1.2px; }
+    .add-category { border:1px solid var(--green);color:var(--green);background:transparent;height:34px;padding:0 11px;display:flex;align-items:center;gap:6px;font-size:12px; }
+    .add-category:hover { background:var(--green);color:#fff; }
+    .categories { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px; }
+    .category { background:var(--panel);border:1px solid var(--line);position:relative;min-height:148px; }
+    .category-top { height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 16px;border-bottom:1px solid #e3e5de; }
+    .category-title { display:flex;gap:9px;align-items:center;font-size:15px;font-weight:700; }
+    .category-title i { color:var(--green);width:16px;height:16px; }
+    .category-options { display:flex;gap:3px; }
+    .mini-btn { width:27px;height:27px;display:grid;place-items:center;border:0;background:transparent;color:#748079; }
+    .mini-btn:hover { color:var(--green);background:#edf1eb; }
+    .mini-btn.delete:hover { color:var(--red);background:#faeeee; }
+    .entries { padding:8px 16px 13px; }
+    .entry { min-height:31px;display:grid;grid-template-columns:118px 1fr 22px;gap:7px;align-items:center;border-bottom:1px dashed #d8ddd5; }
+    .entry:last-child { border-bottom:0; }
+    .entry-key { color:var(--muted); font-size:12px; }
+    .entry-value { font-size:13px;line-height:1.35; }
+    .entry-remove { border:0;background:transparent;color:transparent;display:grid;place-items:center;padding:3px; }
+    .entry:hover .entry-remove { color:#9ca69e; } .entry-remove:hover { color:var(--red)!important; }
+    .add-entry { margin-top:7px;color:var(--green);border:0;background:transparent;padding:5px 0;font-size:12px;display:flex;gap:5px;align-items:center; }
+    .add-entry:hover { text-decoration:underline; }
+    .category.compact { min-height:0; }
+    .category.compact .entries { display:none; }
+    body.exporting .top-actions, body.exporting .add-category, body.exporting .category-options, body.exporting .add-entry, body.exporting .entry-remove, body.exporting .portrait-edit, body.exporting .resize-handle { visibility:hidden!important; }
+    body.exporting .editable { border-color:transparent!important; }
+    .editable { cursor:text; outline:none; border:1px solid transparent; min-width:12px; }
+    .editable:hover { border-bottom-color:#9cad9e; } .editable:focus { border:1px solid var(--green);background:#fff;padding:2px 4px; }
+    [contenteditable=true]:empty:before { content:attr(data-placeholder);color:#a3aca4; }
+    dialog { border:1px solid var(--green);padding:0;max-width:420px;width:calc(100% - 36px);box-shadow:10px 10px 0 rgba(24,93,74,.14); }
+    dialog::backdrop { background:rgba(13,51,41,.34); }
+    .dialog-content { padding:24px; } .dialog-content h3 { margin:0 0 18px;font-size:19px; }
+    .dialog-content label { display:block;font-size:12px;color:var(--muted);margin-bottom:6px; }
+    .dialog-content input { width:100%;padding:9px 10px;border:1px solid var(--line);background:#fbfaf5;margin-bottom:15px; }
+    .dialog-actions { display:flex;justify-content:end;gap:8px; }
+    .text-btn { padding:8px 13px;border:1px solid var(--line);background:#fffdf8;font-size:13px; }
+    .text-btn.primary { background:var(--green);border-color:var(--green);color:#fff; }
+    @media (max-width:760px) { .shell { padding-top:20px; } .panel-layout { display:block; }.avatar-panel { width:100%; max-width:240px; margin:0 0 24px; }.categories {grid-template-columns:1fr;}.entry { grid-template-columns:91px 1fr 20px;}.top-actions .icon-btn:first-child {display:none;} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><div class="seal"><i data-lucide="infinity" size="24"></i></div><div><h1>个人面板</h1></div></div>
+      <div class="top-actions"><button class="icon-btn export-btn" title="存为图片" id="exportImage"><i data-lucide="download" size="17"></i><span>存为图片</span></button><button class="icon-btn" title="导出数据" aria-label="导出数据" id="exportData"><i data-lucide="file-down" size="17"></i></button><button class="icon-btn" title="导入数据" aria-label="导入数据" id="importData"><i data-lucide="file-up" size="17"></i></button><input id="dataFile" type="file" accept="application/json,.json" hidden><button class="icon-btn" title="收起全部" id="collapseAll"><i data-lucide="fold-vertical" size="17"></i></button><button class="icon-btn" title="恢复默认数据" id="reset"><i data-lucide="rotate-ccw" size="17"></i></button></div>
+    </header>
+    <div class="panel-layout">
+      <section class="avatar-panel" id="avatarPanel">
+        <div class="portrait-wrap" id="portraitWrap" title="拖入图片或点击上传"><img class="portrait" id="portrait" alt="人物图像"><div class="portrait-hint"><i data-lucide="image-up"></i><span>拖入人物图像<br>或点击上传</span></div><button class="portrait-edit" id="changePortrait" title="上传人物图像"><i data-lucide="image-up" size="16"></i></button><input id="portraitFile" type="file" accept="image/*" hidden></div>
+        <span class="resize-handle" data-resize="n"></span><span class="resize-handle" data-resize="e"></span><span class="resize-handle" data-resize="s"></span><span class="resize-handle" data-resize="w"></span><span class="resize-handle" data-resize="ne"></span><span class="resize-handle" data-resize="nw"></span><span class="resize-handle" data-resize="se"></span><span class="resize-handle" data-resize="sw"></span>
+      </section>
+      <section class="attributes-panel"><div class="section-head"><span></span><button class="add-category" id="addCategory"><i data-lucide="plus" size="15"></i>新增分类</button></div><div class="categories" id="categories"></div></section>
+    </div>
+  </main>
+  <dialog id="categoryDialog"><form method="dialog" class="dialog-content"><h3>新增属性分类</h3><label for="categoryName">分类名称</label><input id="categoryName" autocomplete="off" placeholder="例如：契约、关系、声望" required><div class="dialog-actions"><button class="text-btn" value="cancel">取消</button><button class="text-btn primary" id="confirmCategory" value="default">创建分类</button></div></form></dialog>
+  <script>
+    const defaults = { templateVersion:3, profile:{portrait:''}, categories:[
+      {title:'基本资料',icon:'user-round',items:[['姓名',''],['性别',''],['种族',''],['身份',''],['量级/修为','']]},
+      {title:'绝对特性',icon:'shield-check',items:[]}, {title:'能力',icon:'wand-sparkles',items:[]}, {title:'喜好',icon:'heart',items:[]}, {title:'成就',icon:'trophy',items:[]}, {title:'物品',icon:'package',items:[]}
+    ]};
+    const savedState = JSON.parse(localStorage.getItem('status-panel-data') || 'null');
+    function migrateState(saved){ if (!saved || saved.templateVersion === 3) return saved || structuredClone(defaults); const p=saved.profile || {}; const level=[p.rank,p.cultivation].filter(Boolean).join(' / '); return {templateVersion:3,profile:{portrait:p.portrait || ''},categories:[{title:'基本资料',icon:'user-round',items:[['姓名',p.name || ''],['性别',p.gender || ''],['种族',p.race || ''],['身份',p.identity || ''],['量级/修为',level]]},...(saved.categories || []).filter(cat=>cat.title!=='能量储存')]}; }
+    let state = migrateState(savedState);
+    if (!savedState || savedState.templateVersion !== 3) localStorage.setItem('status-panel-data', JSON.stringify(state));
+    const icons = ['circle-dot','bookmark','gem','landmark','flame','layers'];
+    const save = () => localStorage.setItem('status-panel-data', JSON.stringify(state));
+    const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+    function renderProfile(){ const portrait=document.querySelector('#portrait');portrait.src=state.profile.portrait;document.querySelector('#portraitWrap').classList.toggle('has-image',Boolean(state.profile.portrait)); }
+    function renderCategories(){ const root=document.querySelector('#categories'); root.innerHTML=state.categories.map((cat,index)=>`<article class="category" data-index="${index}"><div class="category-top"><div class="category-title"><i data-lucide="${cat.icon}"></i><span class="editable category-name" contenteditable="true">${escape(cat.title)}</span></div><div class="category-options"><button class="mini-btn move-up" title="上移"><i data-lucide="arrow-up" size="15"></i></button><button class="mini-btn delete delete-category" title="删除分类"><i data-lucide="trash-2" size="15"></i></button></div></div><div class="entries">${cat.items.map((item,i)=>`<div class="entry" data-item="${i}"><span class="entry-key editable" contenteditable="true">${escape(item[0])}</span><span class="entry-value editable" contenteditable="true">${escape(item[1])}</span><button class="entry-remove" title="删除条目"><i data-lucide="x" size="14"></i></button></div>`).join('')}<button class="add-entry"><i data-lucide="plus" size="14"></i>添加条目</button></div></article>`).join(''); lucide.createIcons(); }
+    function updateFromEdit(e){ const cat=e.target.closest('.category'); if(!cat) return; const ci=+cat.dataset.index, item=e.target.closest('.entry'); if(e.target.classList.contains('category-name')) state.categories[ci].title=e.target.textContent.trim()||'未命名分类'; else if(item){ const ii=+item.dataset.item; if(e.target.classList.contains('entry-key')) state.categories[ci].items[ii][0]=e.target.textContent.trim()||'字段'; else state.categories[ci].items[ii][1]=e.target.textContent.trim(); } save(); }
+    document.querySelector('#categories').addEventListener('focusout',updateFromEdit);
+    document.querySelector('#categories').addEventListener('click',e=>{ const cat=e.target.closest('.category'); if(!cat) return; const ci=+cat.dataset.index; if(e.target.closest('.add-entry')){ state.categories[ci].items.push(['新条目','点击此处编辑内容']); save();renderCategories(); } if(e.target.closest('.entry-remove')){ state.categories[ci].items.splice(+e.target.closest('.entry').dataset.item,1);save();renderCategories(); } if(e.target.closest('.delete-category')){ state.categories.splice(ci,1);save();renderCategories(); } if(e.target.closest('.move-up')&&ci>0){ [state.categories[ci-1],state.categories[ci]]=[state.categories[ci],state.categories[ci-1]];save();renderCategories(); } });
+    const categoryDialog=document.querySelector('#categoryDialog'); document.querySelector('#addCategory').onclick=()=>{document.querySelector('#categoryName').value='';categoryDialog.showModal();}; document.querySelector('#confirmCategory').onclick=e=>{ const v=document.querySelector('#categoryName').value.trim();if(!v){e.preventDefault();return;}state.categories.push({title:v,icon:icons[state.categories.length%icons.length],items:[['新条目','点击此处编辑内容']]});save();renderCategories();};
+    const portraitInput=document.querySelector('#portraitFile'); function setPortrait(file){ if(!file || !file.type.startsWith('image/')) return; const reader=new FileReader();reader.onload=()=>{state.profile.portrait=reader.result;save();renderProfile();};reader.readAsDataURL(file); } document.querySelector('#changePortrait').onclick=e=>{e.stopPropagation();portraitInput.click();}; document.querySelector('#portraitWrap').onclick=e=>{if(!e.target.closest('button')) portraitInput.click();}; portraitInput.onchange=e=>setPortrait(e.target.files[0]); const portraitWrap=document.querySelector('#portraitWrap');['dragenter','dragover'].forEach(type=>portraitWrap.addEventListener(type,e=>{e.preventDefault();portraitWrap.classList.add('dragging');}));['dragleave','drop'].forEach(type=>portraitWrap.addEventListener(type,e=>{e.preventDefault();portraitWrap.classList.remove('dragging');}));portraitWrap.addEventListener('drop',e=>setPortrait(e.dataTransfer.files[0]));
+    const avatarPanel=document.querySelector('#avatarPanel'); avatarPanel.addEventListener('pointerdown',e=>{const handle=e.target.closest('.resize-handle');if(!handle)return;e.preventDefault();const side=handle.dataset.resize,startX=e.clientX,startY=e.clientY,startW=avatarPanel.offsetWidth,startH=avatarPanel.offsetHeight;const resize=move=>{let width=startW,height=startH;if(side.includes('e'))width=startW+move.clientX-startX;if(side.includes('w'))width=startW-move.clientX+startX;if(side.includes('s'))height=startH+move.clientY-startY;if(side.includes('n'))height=startH-move.clientY+startY;avatarPanel.style.width=Math.max(164,Math.min(window.innerWidth*.5,width))+'px';avatarPanel.style.height=Math.max(190,height)+'px';};const stop=()=>{window.removeEventListener('pointermove',resize);window.removeEventListener('pointerup',stop);};window.addEventListener('pointermove',resize);window.addEventListener('pointerup',stop);});
+    document.querySelector('#reset').onclick=()=>{if(confirm('确定恢复示例数据？你的编辑内容将被清除。')){state=structuredClone(defaults);save();renderProfile();renderCategories();}};
+    document.querySelector('#collapseAll').onclick=()=>{const willCollapse=[...document.querySelectorAll('.category')].some(el=>!el.classList.contains('compact'));document.querySelectorAll('.category').forEach(el=>el.classList.toggle('compact',willCollapse));};
+    document.querySelector('#exportImage').onclick=async()=>{const button=document.querySelector('#exportImage');button.disabled=true;document.body.classList.add('exporting');try{const canvas=await html2canvas(document.querySelector('.shell'),{backgroundColor:'#e7ebe3',scale:2,useCORS:true,logging:false});const link=document.createElement('a');link.download='个人面板.png';link.href=canvas.toDataURL('image/png');link.click();}finally{document.body.classList.remove('exporting');button.disabled=false;}};
+    document.querySelector('#exportData').onclick=()=>{const file=new Blob([JSON.stringify(state,null,2)],{type:'application/json;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(file);link.download='个人面板数据.json';link.click();URL.revokeObjectURL(link.href);};
+    const dataFile=document.querySelector('#dataFile');document.querySelector('#importData').onclick=()=>{dataFile.value='';dataFile.click();};dataFile.onchange=async()=>{const file=dataFile.files[0];if(!file)return;try{const data=JSON.parse(await file.text());const imported=migrateState(data);if(!imported?.profile||!Array.isArray(imported.categories))throw new Error('格式无效');imported.categories=imported.categories.filter(cat=>cat&&typeof cat.title==='string'&&Array.isArray(cat.items)).map(cat=>({title:cat.title,icon:typeof cat.icon==='string'?cat.icon:'circle-dot',items:cat.items.filter(item=>Array.isArray(item)).map(item=>[String(item[0]||''),String(item[1]||'')])}));if(!confirm('导入会覆盖当前面板数据，是否继续？'))return;state=imported;state.templateVersion=3;save();renderProfile();renderCategories();}catch{alert('无法导入该文件，请选择由个人面板导出的 JSON 数据文件。');}};
+    renderProfile();renderCategories();lucide.createIcons();
+  </script>
+</body>
+</html>
