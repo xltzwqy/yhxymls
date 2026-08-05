@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#185d4a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/app-icon.svg" />
   <title>角色系统面板</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -124,6 +130,7 @@
     document.querySelector('#exportImage').onclick=async()=>{const button=document.querySelector('#exportImage');button.disabled=true;document.body.classList.add('exporting');try{const canvas=await html2canvas(document.querySelector('.shell'),{backgroundColor:'#e7ebe3',scale:2,useCORS:true,logging:false});const link=document.createElement('a');link.download='个人面板.png';link.href=canvas.toDataURL('image/png');link.click();}finally{document.body.classList.remove('exporting');button.disabled=false;}};
     document.querySelector('#exportData').onclick=()=>{const file=new Blob([JSON.stringify(state,null,2)],{type:'application/json;charset=utf-8'});const link=document.createElement('a');link.href=URL.createObjectURL(file);link.download='个人面板数据.json';link.click();URL.revokeObjectURL(link.href);};
     const dataFile=document.querySelector('#dataFile');document.querySelector('#importData').onclick=()=>{dataFile.value='';dataFile.click();};dataFile.onchange=async()=>{const file=dataFile.files[0];if(!file)return;try{const data=JSON.parse(await file.text());const imported=migrateState(data);if(!imported?.profile||!Array.isArray(imported.categories))throw new Error('格式无效');imported.categories=imported.categories.filter(cat=>cat&&typeof cat.title==='string'&&Array.isArray(cat.items)).map(cat=>({title:cat.title,icon:typeof cat.icon==='string'?cat.icon:'circle-dot',items:cat.items.filter(item=>Array.isArray(item)).map(item=>[String(item[0]||''),String(item[1]||'')])}));if(!confirm('导入会覆盖当前面板数据，是否继续？'))return;state=imported;state.templateVersion=3;save();renderProfile();renderCategories();}catch{alert('无法导入该文件，请选择由个人面板导出的 JSON 数据文件。');}};
+    if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
     renderProfile();renderCategories();lucide.createIcons();
   </script>
 </body>

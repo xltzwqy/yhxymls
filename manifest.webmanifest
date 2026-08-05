@@ -1,0 +1,19 @@
+{
+  "name": "个人面板",
+  "short_name": "个人面板",
+  "description": "可编辑的个人属性面板",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e7ebe3",
+  "theme_color": "#185d4a",
+  "icons": [
+    {
+      "src": "./icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
