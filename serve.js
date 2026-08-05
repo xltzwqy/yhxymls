@@ -9,6 +9,7 @@ http.createServer((req, res) => {
     res.writeHead(404);
     return res.end('Not found');
   }
-  res.setHeader('Content-Type', target.endsWith('.html') ? 'text/html; charset=utf-8' : 'application/octet-stream');
+  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8', '.svg': 'image/svg+xml' };
+  res.setHeader('Content-Type', types[path.extname(target)] || 'application/octet-stream');
   fs.createReadStream(file).pipe(res);
 }).listen(4173, '127.0.0.1', () => console.log('Panel running at http://127.0.0.1:4173'));

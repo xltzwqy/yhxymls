@@ -1,4 +1,4 @@
-const CACHE_NAME = 'personal-panel-v1';
+const CACHE_NAME = 'personal-panel-v2';
 const CORE_FILES = ['./', './index.html', './manifest.webmanifest', './icons/app-icon.svg'];
 
 self.addEventListener('install', event => {
