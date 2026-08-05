@@ -21,3 +21,8 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+.android-build/
+android/.gradle/
+android/app/build/
+android/local.properties
+*.iml
